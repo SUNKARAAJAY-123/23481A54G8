@@ -1,0 +1,113 @@
+{
+  "info": {
+    "name": "Notification System Backend API",
+    "description": "API collection for the notification system backend including logging and notification endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Send Log",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{access_token}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"stack\": \"frontend\",\n  \"level\": \"info\",\n  \"package\": \"component\",\n  \"message\": \"Test log message\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/logs",
+          "host": ["{{base_url}}"],
+          "path": ["logs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get All Logs",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/logs",
+          "host": ["{{base_url}}"],
+          "path": ["logs"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Get Logs by Level",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/logs/{{level}}",
+          "host": ["{{base_url}}"],
+          "path": ["logs", "{{level}}"]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Send Notification",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Test Notification\",\n  \"message\": \"This is a test notification message\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/notifications",
+          "host": ["{{base_url}}"],
+          "path": ["notifications"]
+        }
+      },
+      "response": []
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "access_token",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJNYXBDbGFpbXMiOnsiYXVkIjoiaHR0cDovLzIwLjI0NC41Ni4xNDQvZXZhbHVhdGlvbi1zZXJ2aWNlIiwiZW1haWwiOiJzdW5rYXJhYWpheTg2QGdtYWlsLmNvbSIsImV4cCI6MTc3ODMwODkxMywiaWF0IjoxNzc4MzA4MDEzLCJpc3MiOiJBZmZvcmQgTWVkaWNhbCBUZWNobm9sb2dpZXMgUHJpdmF0ZSBMaW1pdGVkIiwianRpIjoiMmJlNWYyODItOTM1NC00ODhlLWJlZDgtM2VmODM5MDE4MzIzIiwibG9jYWxlIjoiZW4tSU4iLCJuYW1lIjoic3Vua2FyYSBhamF5Iiwic3ViIjoiZTAxMDYxMjctZTkxMi00MWYyLWI1NDktYWRmNjY3NWY5MGE3In0sImVtYWlsIjoic3Vua2FyYWFqYXk4NkBnbWFpbC5jb20iLCJuYW1lIjoic3Vua2FyYSBhamF5Iiwicm9sbE5vIjoiMjM0ODFhNTRnOCIsImFjY2Vzc0NvZGUiOiJlSmRDdUMiLCJjbGllbnRJRCI6ImUwMTA2MTI3LWU5MTItNDFmMi1iNTQ5LWFkZjY2NzVmOTBhNyIsImNsaWVudFNlY3JldCI6InJLbVNHVXFlV3BtSmpoUU0ifQ.YlHz-f3SvR-QiE_KuDPcihJhxUC7nitC5zFhubhePtw",
+      "type": "string"
+    },
+    {
+      "key": "level",
+      "value": "info",
+      "type": "string"
+    }
+  ]
+}
