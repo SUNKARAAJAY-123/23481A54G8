@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Log } from "../../logging_middleware/log";
 
 function App() {
   const [title, setTitle] = useState("");
@@ -7,10 +8,7 @@ function App() {
   const handleSubmit = async () => {
     alert("Notification Sent Successfully");
 
-    console.log({
-      title,
-      message,
-    });
+    await Log("frontend", "info", "component", `Notification sent: ${title} - ${message}`);
   };
 
   return (
