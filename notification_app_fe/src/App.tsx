@@ -1,163 +1,590 @@
-import { useState } from "react";
-import { Log } from "./logger";
+import React, { useState, useEffect } from 'react';
+import {
+  ThemeProvider,
+  createTheme,
+  CssBaseline,
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Grid,
+  Card,
+  CardContent,
+  TextField,
+  Button,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Chip,
+  Avatar,
+  IconButton,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  CircularProgress,
+  Alert,
+  Snackbar,
+  useMediaQuery,
+  useTheme,
+} from '@mui/material';
+import {
+  Dashboard,
+  Notifications,
+  Assessment,
+  Settings,
+  Person,
+  Notifications as NotificationsIcon,
+  Send,
+  Search,
+  FilterList,
+} from '@mui/icons-material';
+import { Log } from './logger';
 
-function App() {
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [status, setStatus] = useState<"idle" | "success" | "error">("idle");
+interface LogEntry {
+  id: number;
+  timestamp: string;
+  level: 'debug' | 'info' | 'warn' | 'error' | 'fatal';
+  package: string;
+  message: string;
+}
 
-  const handleSubmit = async () => {
-    if (!title.trim() || !message.trim()) {
-      setStatus("error");
-      setTimeout(() => setStatus("idle"), 3000);
+interface NotificationForm {
+  title: string;
+  message: string;
+  type: 'Email' | 'SMS' | 'Push';
+  priority: 'Low' | 'Medium' | 'High';
+}
+
+const drawerWidth = 240;
+
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#667eea',
+    },
+    secondary: {
+      main: '#764ba2',
+    },
+    background: {
+      default: '#f5f5f5',
+      paper: '#ffffff',
+    },
+  },
+  typography: {
+    fontFamily: '"Segoe UI", "Roboto", "Helvetica", "Arial", sans-serif',
+    h4: {
+      fontWeight: 600,
+    },
+    h6: {
+      fontWeight: 500,
+    },
+  },
+  shape: {
+    borderRadius: 12,
+  },
+  components: {
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+          borderRadius: 16,
+        },
+      },
+    },
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8,
+          textTransform: 'none',
+          fontWeight: 600,
+        },
+      },
+    },
+  },
+});
+
+const App: React.FC = () => {
+  const muiTheme = useTheme();
+  const isMobile = useMediaQuery(muiTheme.breakpoints.down('md'));
+
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [activeSection, setActiveSection] = useState('dashboard');
+  const [logs, setLogs] = useState<LogEntry[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [notification, setNotification] = useState<NotificationForm>({
+    title: '',
+    message: '',
+    type: 'Email',
+    priority: 'Medium',
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success' as 'success' | 'error',
+  });
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterLevel, setFilterLevel] = useState<string>('all');
+
+  // Dummy data
+  useEffect(() => {
+    const dummyLogs: LogEntry[] = [
+      {
+        id: 1,
+        timestamp: new Date().toISOString(),
+        level: 'info',
+        package: 'component',
+        message: 'Notification sent successfully',
+      },
+      {
+        id: 2,
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        level: 'warn',
+        package: 'api',
+        message: 'API rate limit approaching',
+      },
+      {
+        id: 3,
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        level: 'error',
+        package: 'auth',
+        message: 'Authentication failed',
+      },
+      {
+        id: 4,
+        timestamp: new Date(Date.now() - 10800000).toISOString(),
+        level: 'debug',
+        package: 'utils',
+        message: 'Cache cleared',
+      },
+    ];
+    setLogs(dummyLogs);
+  }, []);
+
+  const handleDrawerToggle = () => {
+    setMobileOpen(!mobileOpen);
+  };
+
+  const handleSendNotification = async () => {
+    if (!notification.title.trim() || !notification.message.trim()) {
+      setSnackbar({
+        open: true,
+        message: 'Please fill in all required fields',
+        severity: 'error',
+      });
       return;
     }
 
-    setIsLoading(true);
-    setStatus("idle");
-
+    setLoading(true);
     try {
-      await Log("frontend", "info", "component", `Notification sent: ${title} - ${message}`);
-      setStatus("success");
-      setTitle("");
-      setMessage("");
+      await Log(
+        'frontend',
+        notification.priority === 'High' ? 'error' : notification.priority === 'Medium' ? 'warn' : 'info',
+        'component',
+        `Notification: ${notification.title} - ${notification.message} (${notification.type})`
+      );
+
+      const newLog: LogEntry = {
+        id: Date.now(),
+        timestamp: new Date().toISOString(),
+        level: notification.priority === 'High' ? 'error' : notification.priority === 'Medium' ? 'warn' : 'info',
+        package: 'component',
+        message: `Notification: ${notification.title} - ${notification.message} (${notification.type})`,
+      };
+
+      setLogs(prev => [newLog, ...prev]);
+      setNotification({
+        title: '',
+        message: '',
+        type: 'Email',
+        priority: 'Medium',
+      });
+      setSnackbar({
+        open: true,
+        message: 'Notification sent successfully!',
+        severity: 'success',
+      });
     } catch (error) {
-      setStatus("error");
+      setSnackbar({
+        open: true,
+        message: 'Failed to send notification',
+        severity: 'error',
+      });
     } finally {
-      setIsLoading(false);
-      setTimeout(() => setStatus("idle"), 3000);
+      setLoading(false);
     }
   };
 
-  const containerStyle: React.CSSProperties = {
-    minHeight: "100vh",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
-    padding: "20px",
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = log.message.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterLevel === 'all' || log.level === filterLevel;
+    return matchesSearch && matchesFilter;
+  });
+
+  const stats = {
+    total: logs.length,
+    success: logs.filter(log => log.level === 'info').length,
+    warning: logs.filter(log => log.level === 'warn').length,
+    error: logs.filter(log => log.level === 'error').length,
   };
 
-  const cardStyle: React.CSSProperties = {
-    background: "white",
-    borderRadius: "20px",
-    padding: "40px",
-    boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
-    width: "100%",
-    maxWidth: "500px",
-    textAlign: "center",
-  };
-
-  const titleStyle: React.CSSProperties = {
-    color: "#333",
-    marginBottom: "30px",
-    fontSize: "2.5rem",
-    fontWeight: "300",
-  };
-
-  const inputStyle: React.CSSProperties = {
-    width: "100%",
-    padding: "15px 20px",
-    marginBottom: "20px",
-    border: "2px solid #e1e5e9",
-    borderRadius: "10px",
-    fontSize: "16px",
-    transition: "border-color 0.3s ease",
-    outline: "none",
-  };
-
-  const textareaStyle: React.CSSProperties = {
-    ...inputStyle,
-    height: "120px",
-    resize: "vertical",
-    marginBottom: "30px",
-  };
-
-  const buttonStyle: React.CSSProperties = {
-    background: isLoading ? "#ccc" : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    color: "white",
-    border: "none",
-    padding: "15px 40px",
-    borderRadius: "25px",
-    fontSize: "16px",
-    fontWeight: "600",
-    cursor: isLoading ? "not-allowed" : "pointer",
-    transition: "transform 0.2s ease, box-shadow 0.2s ease",
-    boxShadow: "0 4px 15px rgba(102, 126, 234, 0.4)",
-  };
-
-  const statusStyle: React.CSSProperties = {
-    marginTop: "20px",
-    padding: "10px 20px",
-    borderRadius: "20px",
-    fontWeight: "500",
-    fontSize: "14px",
-    opacity: status === "idle" ? 0 : 1,
-    transition: "opacity 0.3s ease",
-  };
+  const drawer = (
+    <Box>
+      <Toolbar>
+        <Typography variant="h6" noWrap component="div" sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+          NMS
+        </Typography>
+      </Toolbar>
+      <List>
+        {[
+          { text: 'Dashboard', icon: <Dashboard />, id: 'dashboard' },
+          { text: 'Notifications', icon: <Notifications />, id: 'notifications' },
+          { text: 'Logs', icon: <Assessment />, id: 'logs' },
+          { text: 'Settings', icon: <Settings />, id: 'settings' },
+        ].map((item) => (
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              selected={activeSection === item.id}
+              onClick={() => {
+                setActiveSection(item.id);
+                if (isMobile) setMobileOpen(false);
+              }}
+              sx={{
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.light',
+                  '&:hover': {
+                    backgroundColor: 'primary.main',
+                  },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ color: activeSection === item.id ? 'white' : 'inherit' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText
+                primary={item.text}
+                sx={{ color: activeSection === item.id ? 'white' : 'inherit' }}
+              />
+            </ListItemButton>
+          </ListItem>
+        ))}
+      </List>
+    </Box>
+  );
 
   return (
-    <div style={containerStyle}>
-      <div style={cardStyle}>
-        <h1 style={titleStyle}>📢 Notification Center</h1>
-
-        <input
-          type="text"
-          placeholder="Enter notification title..."
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          style={{
-            ...inputStyle,
-            borderColor: title ? "#667eea" : "#e1e5e9",
-          }}
-          disabled={isLoading}
-        />
-
-        <textarea
-          placeholder="Enter your message..."
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          style={{
-            ...textareaStyle,
-            borderColor: message ? "#667eea" : "#e1e5e9",
-          }}
-          disabled={isLoading}
-        />
-
-        <button
-          onClick={handleSubmit}
-          style={buttonStyle}
-          disabled={isLoading}
-          onMouseEnter={(e) => {
-            if (!isLoading) {
-              e.currentTarget.style.transform = "translateY(-2px)";
-              e.currentTarget.style.boxShadow = "0 6px 20px rgba(102, 126, 234, 0.6)";
-            }
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow = "0 4px 15px rgba(102, 126, 234, 0.4)";
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Box sx={{ display: 'flex' }}>
+        <AppBar
+          position="fixed"
+          sx={{
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+            ml: { md: `${drawerWidth}px` },
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           }}
         >
-          {isLoading ? "🚀 Sending..." : "📤 Send Notification"}
-        </button>
+          <Toolbar>
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { md: 'none' } }}
+            >
+              <Dashboard />
+            </IconButton>
+            <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
+              Notification Management System
+            </Typography>
+            <IconButton color="inherit">
+              <NotificationsIcon />
+            </IconButton>
+            <IconButton color="inherit">
+              <Avatar sx={{ width: 32, height: 32, ml: 1 }}>
+                <Person />
+              </Avatar>
+            </IconButton>
+          </Toolbar>
+        </AppBar>
 
-        {status === "success" && (
-          <div style={{ ...statusStyle, backgroundColor: "#d4edda", color: "#155724" }}>
-            ✅ Notification sent successfully!
-          </div>
-        )}
+        <Box
+          component="nav"
+          sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 } }}
+        >
+          <Drawer
+            variant="temporary"
+            open={mobileOpen}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true,
+            }}
+            sx={{
+              display: { xs: 'block', md: 'none' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            }}
+          >
+            {drawer}
+          </Drawer>
+          <Drawer
+            variant="permanent"
+            sx={{
+              display: { xs: 'none', md: 'block' },
+              '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            }}
+            open
+          >
+            {drawer}
+          </Drawer>
+        </Box>
 
-        {status === "error" && (
-          <div style={{ ...statusStyle, backgroundColor: "#f8d7da", color: "#721c24" }}>
-            ❌ Please fill in both title and message.
-          </div>
-        )}
-      </div>
-    </div>
+        <Box
+          component="main"
+          sx={{
+            flexGrow: 1,
+            p: 3,
+            width: { md: `calc(100% - ${drawerWidth}px)` },
+          }}
+        >
+          <Toolbar />
+
+          {activeSection === 'dashboard' && (
+            <>
+              <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+                Dashboard Overview
+              </Typography>
+
+              <Grid container spacing={3} sx={{ mb: 4 }}>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        Total Notifications
+                      </Typography>
+                      <Typography variant="h4" component="div">
+                        {stats.total}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        Success Logs
+                      </Typography>
+                      <Typography variant="h4" component="div" sx={{ color: 'success.main' }}>
+                        {stats.success}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        Warning Logs
+                      </Typography>
+                      <Typography variant="h4" component="div" sx={{ color: 'warning.main' }}>
+                        {stats.warning}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+                <Grid item xs={12} sm={6} md={3}>
+                  <Card>
+                    <CardContent>
+                      <Typography color="textSecondary" gutterBottom>
+                        Error Logs
+                      </Typography>
+                      <Typography variant="h4" component="div" sx={{ color: 'error.main' }}>
+                        {stats.error}
+                      </Typography>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Send Notification
+                      </Typography>
+                      <Box component="form" sx={{ '& .MuiTextField-root': { mb: 2 } }}>
+                        <TextField
+                          fullWidth
+                          label="Notification Title"
+                          value={notification.title}
+                          onChange={(e) => setNotification(prev => ({ ...prev, title: e.target.value }))}
+                          required
+                        />
+                        <TextField
+                          fullWidth
+                          label="Message"
+                          multiline
+                          rows={3}
+                          value={notification.message}
+                          onChange={(e) => setNotification(prev => ({ ...prev, message: e.target.value }))}
+                          required
+                        />
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth>
+                              <InputLabel>Type</InputLabel>
+                              <Select
+                                value={notification.type}
+                                label="Type"
+                                onChange={(e) => setNotification(prev => ({ ...prev, type: e.target.value as any }))}
+                              >
+                                <MenuItem value="Email">Email</MenuItem>
+                                <MenuItem value="SMS">SMS</MenuItem>
+                                <MenuItem value="Push">Push</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <FormControl fullWidth>
+                              <InputLabel>Priority</InputLabel>
+                              <Select
+                                value={notification.priority}
+                                label="Priority"
+                                onChange={(e) => setNotification(prev => ({ ...prev, priority: e.target.value as any }))}
+                              >
+                                <MenuItem value="Low">Low</MenuItem>
+                                <MenuItem value="Medium">Medium</MenuItem>
+                                <MenuItem value="High">High</MenuItem>
+                              </Select>
+                            </FormControl>
+                          </Grid>
+                        </Grid>
+                        <Button
+                          variant="contained"
+                          startIcon={loading ? <CircularProgress size={20} /> : <Send />}
+                          onClick={handleSendNotification}
+                          disabled={loading}
+                          sx={{ mt: 2 }}
+                        >
+                          {loading ? 'Sending...' : 'Send Notification'}
+                        </Button>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                </Grid>
+
+                <Grid item xs={12} md={6}>
+                  <Card>
+                    <CardContent>
+                      <Typography variant="h6" gutterBottom>
+                        Recent Activity
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
+                        <TextField
+                          size="small"
+                          placeholder="Search logs..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          InputProps={{
+                            startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                          }}
+                        />
+                        <FormControl size="small" sx={{ minWidth: 120 }}>
+                          <InputLabel>Filter</InputLabel>
+                          <Select
+                            value={filterLevel}
+                            label="Filter"
+                            onChange={(e) => setFilterLevel(e.target.value)}
+                          >
+                            <MenuItem value="all">All</MenuItem>
+                            <MenuItem value="info">Info</MenuItem>
+                            <MenuItem value="warn">Warning</MenuItem>
+                            <MenuItem value="error">Error</MenuItem>
+                          </Select>
+                        </FormControl>
+                      </Box>
+                      <TableContainer component={Paper} sx={{ maxHeight: 300 }}>
+                        <Table stickyHeader size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Time</TableCell>
+                              <TableCell>Level</TableCell>
+                              <TableCell>Package</TableCell>
+                              <TableCell>Message</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {filteredLogs.slice(0, 5).map((log) => (
+                              <TableRow key={log.id}>
+                                <TableCell>
+                                  {new Date(log.timestamp).toLocaleTimeString()}
+                                </TableCell>
+                                <TableCell>
+                                  <Chip
+                                    label={log.level}
+                                    size="small"
+                                    color={
+                                      log.level === 'error' ? 'error' :
+                                      log.level === 'warn' ? 'warning' : 'success'
+                                    }
+                                  />
+                                </TableCell>
+                                <TableCell>{log.package}</TableCell>
+                                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                  {log.message}
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </CardContent>
+                  </Card>
+                </Grid>
+              </Grid>
+            </>
+          )}
+
+          {activeSection === 'notifications' && (
+            <Typography variant="h4">Notifications Section</Typography>
+          )}
+
+          {activeSection === 'logs' && (
+            <Typography variant="h4">Logs Section</Typography>
+          )}
+
+          {activeSection === 'settings' && (
+            <Typography variant="h4">Settings Section</Typography>
+          )}
+        </Box>
+      </Box>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+      >
+        <Alert
+          onClose={() => setSnackbar(prev => ({ ...prev, open: false }))}
+          severity={snackbar.severity}
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </ThemeProvider>
   );
-}
+};
 
 export default App;
