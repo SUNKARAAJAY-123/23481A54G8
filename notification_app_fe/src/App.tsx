@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Log } from "../../logging_middleware/log";
+import { Log } from "./logger";
 
 function App() {
   const [title, setTitle] = useState("");
